@@ -1,0 +1,122 @@
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #050510;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .circle-option {
+      position: fixed;
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      margin: 10px;
+      padding: 6px 10px;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 6px;
+    }
+
+    .circle-option:nth-of-type(1) {
+      bottom: 40px;
+      left: 0px;
+    }
+
+    .circle-option:nth-of-type(2) {
+      bottom: 80px;
+      left: 0px;
+    }
+
+    .circle-option:nth-of-type(3) {
+    bottom: 125px;
+    left: 0px;
+  }
+
+    /* Custom circular radio button styling */
+    .circle-option input[type="radio"] {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border: 2px solid #555;
+      border-radius: 50%;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .circle-option input[type="radio"]:checked {
+      background-color: #007bff;
+      border-color: #0056b3;
+      box-shadow: inset 0 0 0 4px #fff;
+    }
+
+    .circle-option input[type="radio"]:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #info {
+      position: fixed;
+      top: 45px;
+      left: 12px;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    #info.docked {
+      transform: translateX(calc(-100% - 28px));
+    }
+
+    #dockInstructions {
+      position: fixed;
+      background: rgba(0, 0, 0, 0.6);
+      top: 30px;
+      left: 4px;
+      padding: 5px 8px;
+      border: 1px solid white;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      z-index: 4;
+      
+    }
+
+    #points {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    #title {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 50px;
+      line-height: 1.4;
+    }
+    #name{
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 10px;
+      line-height: 1.4;
+      z-index: 3;
+    }

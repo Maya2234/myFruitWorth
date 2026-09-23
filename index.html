@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Fruit Worth</title>
+  
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="title" style="font-family: 'Brush Script MT', cursive;">MY FRUIT WORTH</div>
+  <div id="info">
+    Use the arrow keys to move the camera around. <br>Press 'R' to start over.
+  </div>
+  <button id="dockInstructions" type="button">&lt</button>
+  <div id="points">
+    Fruits Collected: <span id="pointCount">0</span>
+  </div>
+
+  <label class="circle-option">
+    <input type="radio" name="gameOption" id="circleA" value="1" checked>
+    Level 1
+  </label>
+
+  <label class="circle-option">
+    <input type="radio" name="gameOption" id="circleB" value="2">
+    Level 2
+  </label>
+
+  <label class="circle-option">
+    <input type="radio" name="gameOption" id="circleC" value="3">
+    Level 3
+  </label>
+
+  <div id = "name">Maya Tomarchio</div>
+
+<script>
+
+  //we add shapes (like lines) to this canvas
+  document.getElementById("circleA").addEventListener("change", draw);
+  document.getElementById("circleB").addEventListener("change", draw);
+  document.getElementById("circleC").addEventListener("change", draw);
+
+  const CAMERA_RADIUS = .5; // how close the camera can get to a solid object
+  const GRID_F = 120; // tune this until the scene looks reasonably sized
+  const rows = 200;
+  const cols = 320; //grid width 
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const info = document.getElementById("info");
+  const dockInstructions = document.getElementById("dockInstructions");
+  let seePixelOutline = false; 
+
+  const pixelGrid = Array.from(
+    { length: cols },
+    () => Array(rows).fill(null)
+  );
+
+  dockInstructions.addEventListener("click", () => {
+    info.classList.toggle("docked");
+    dockInstructions.textContent = info.classList.contains("docked")
+      ? ">"
+      : "<";
+  });
+
+  const house = {
+    vertices: [
+      { x:  1,  y: 1,  z: 1},   // A, idx 0 front top right
+      { x: -1,  y: 1,  z: 1},   // B, idx 1 front top left
+      { x:  1,  y: -1, z: 1},   // C, idx 2 front bottom right
+      { x: -1,  y: -1, z:  1},  // D, idx 3 front bottom left
+      { x:  1,  y: 1,  z: -1},  // E, idx 4 back top right
+      { x: -1,  y: 1,  z: -1},  // F, idx 5 back top left
+      { x:  1,  y: -1, z:  -1}, // G, idx 6 back bottom right
+      { x: -1,  y: -1, z: -1},  // H, idx 7 back bottom left
+      { x:  0,  y:  2, z:  1},   // front roof ridge, idx 8
+      { x:  0,  y:  2, z: -1}    // back roof ridge, idx 9
+    ],
+    edges: [
+      [0, 1],
+      [0, 2],
+      [0, 4],
+      [2, 3],
+      [1, 3], 
+      [2, 6], 
+      [4, 5],
+      [4, 6], 
+      [1, 5], 
+      [6, 7],
+      [5, 7], 
+      [3, 7], 
+    ],
+    faces: [
+    { vertices: [5, 6, 7], color: "#b5651d" }, // back wall
+    { vertices: [5, 4, 6], color: "#b5651d" },
+
+    { vertices: [1, 7, 3], color: "#c47a3c" }, // left wall
+    { vertices: [1, 5, 7], color: "#c47a3c" }, 
+
+    { vertices: [0, 2, 6], color: "#d99552" }, // right wall
+    { vertices: [0, 6, 4], color: "#d99552" },
+
+    { vertices: [1, 0, 2], color: "#b5651d" }, // front wall
+    { vertices: [1, 2, 3], color: "#b5651d" },
+
+    { vertices: [1, 0, 8], color: "#8b2f2f" },    // front roof
+    { vertices: [5, 4, 9], color: "#6f2525" },    // back roof
+    { vertices: [0, 4, 9, 8], color: "#9e3838" }, // right roof slope
+    { vertices: [1, 5, 9, 8], color: "#7d2929" }  // left roof slope
+  ]
+  };
+
+  const fruit = {
+  vertices: [
+    { x: 0, y: 1,  z: 0 },   // 0 top
+    { x: 0, y: -1, z: 0 },   // 1 bottom
+    { x: 1, y: 0,  z: 0 },   // 2 right
+    { x: -1, y: 0, z: 0 },   // 3 left
+    { x: 0, y: 0,  z: 1 },   // 4 front
+    { x: 0, y: 0,  z: -1 },  // 5 back
+  ],
+  edges: [
+    [0,2],[0,3],[0,4],[0,5],   // top to the middle ring
+    [1,2],[1,3],[1,4],[1,5],   // bottom to the middle ring
+    [2,4],[4,3],[3,5],[5,2],   // the ring itself
+  ],
+  faces: [
+    { vertices: [0, 2, 4], color: "red" },
+    { vertices: [0, 4, 3], color: "red" },
+    { vertices: [0, 3, 5], color: "red" },
+    { vertices: [0, 5, 2], color: "red" },
+    { vertices: [1, 2, 4], color: "red" },
+    { vertices: [1, 4, 3], color: "red" },
+    { vertices: [1, 3, 5], color: "red" },
+    { vertices: [1, 5, 2], color: "red" }
+  ]
+  };
+
+  const bush = {
+    vertices: [
+      { x: 0, y: 0,  z: 0 },  //0 bottom left back
+      { x: 0, y: 0, z: 1 },   //1 bottom left front
+      { x: 4, y: 0,  z: 1 },  //2 bottom right front
+      { x: 4, y: 0, z: 0 },   //3 bottom right back
+      { x: 1, y: 4,  z: 0 },  //4 top left back
+      { x: 1, y: 4, z: 1 },   //5 top left front
+      { x: 3, y: 4,  z: 1 },  //6 top right front
+      { x: 3, y: 4, z: 0 },   //7 top right back
+    ],
+    edges: [
+      [0,1],[2,3],[1,2],[0,3],   // connect bottom verticies
+      [4,5],[6,7],[5,6],[4,7],   // connect tops
+      [4,0],[1,5],[2,6],[3,7],   // connect top to bottom
+    ],
+    faces: [
+      { vertices: [0, 1, 2], color: "#2e7d32" }, // bottom
+      { vertices: [0, 2, 3], color: "#2e7d32" },
+
+      { vertices: [4, 6, 7], color: "#66bb6a" }, // top
+      { vertices: [4, 5, 6], color: "#66bb6a" },
+
+      { vertices: [0, 7, 4], color: "#388e3c" }, // back
+      { vertices: [0, 3, 7], color: "#388e3c" },
+
+      { vertices: [1, 6, 5], color: "#43a047" }, // front
+      { vertices: [1, 2, 6], color: "#43a047" },
+
+      { vertices: [0, 5, 1], color: "#4caf50" }, // left
+      { vertices: [0, 4, 5], color: "#4caf50" },
+
+      { vertices: [3, 6, 7], color: "#4caf50" }, // right
+      { vertices: [3, 2, 6], color: "#4caf50" },
+    ]
+  };
+
+  const objects = [
+  { model: house, pos: {x: 0, y: -2, z: 10}, scale: 3, color: "white" },
+  { model: fruit, pos: {x: 8, y: -1, z: 8},  scale: 0.1, color: "red", pickable: true, picked: false},
+  { model: bush, pos: {x: 6, y: -1, z: 8},  scale: 0.1, color: "green" },
+  { model: bush, pos: {x: 6, y: -1, z: 4},  scale: 0.2, color: "green" },
+  { model: bush, pos: {x: -6, y: -1, z: 8},  scale: 0.1, color: "green" },
+  { model: bush, pos: {x: 6, y: -1, z: 8},  scale: 0.1, color: "green" },
+  { model: bush, pos: {x: 10, y: -1, z: 4},  scale: 0.2, color: "green" },
+  { model: bush, pos: {x: -2, y: -1, z: -3},  scale: 0.1, color: "green" },
+  { model: bush, pos: {x: 2, y: -1, z: 8},  scale: 0.05, color: "green" },
+  { model: bush, pos: {x: 6, y: -1, z: -5},  scale: 0.1, color: "green" },
+  ...makeFruitRow(10, 2, 1.5, 8),   // 5 fruit, starting at x=2, 1.5 apart, all at z=8
+];
+
+
+  let camera = {x: 0, y: 0, z: -10};
+  let points = 0;
+  const NEAR = 0.1; //do not draw anything closer than this to the camera
+  const WORLD_MIN_X = -12;
+  const WORLD_MAX_X = 12;
+  const WORLD_MIN_Z = -12;
+  const WORLD_MAX_Z = 14;
+
+function boundingBox(p0, p1, p2) {
+  return {
+    minU: Math.max(0, Math.floor(Math.min(p0.u, p1.u, p2.u))),
+    maxU: Math.min(cols - 1, Math.ceil(Math.max(p0.u, p1.u, p2.u))),
+    minV: Math.max(0, Math.floor(Math.min(p0.v, p1.v, p2.v))),
+    maxV: Math.min(rows - 1, Math.ceil(Math.max(p0.v, p1.v, p2.v))),
+  };
+}
+
+let zBuffer = [];
+
+function initZBuffer() {
+  zBuffer = [];
+  for (let u = 0; u < cols; u++) {
+    zBuffer.push(new Array(rows).fill(Infinity));
+  }
+}
+
+function fillTriangle(p0, p1, p2, color) {
+  const box = boundingBox(p0, p1, p2);
+
+  for (let v = box.minV; v <= box.maxV; v++) {
+    for (let u = box.minU; u <= box.maxU; u++) {
+      const bary = barycentric(p0, p1, p2, { u, v });
+      if (!bary) continue;
+
+      const { w0, w1, w2 } = bary;
+      if (w0 < 0 || w1 < 0 || w2 < 0) continue; // outside the triangle
+
+      const z = w0 * p0.z + w1 * p1.z + w2 * p2.z;
+
+      if (z < zBuffer[u][v]) {          // is this triangle closer than what's there?
+        zBuffer[u][v] = z;
+        pixelGrid[u][v] = color;
+      }
+    }
+  }
+}
+
+  function edgeFunction(a, b, c) {
+  // signed area of triangle a,b,c, ×2 — positive if c is left of the line a→b
+  return (c.u - a.u) * (b.v - a.v) - (c.v - a.v) * (b.u - a.u);
+}
+
+function barycentric(p0, p1, p2, p) {
+  const area = edgeFunction(p0, p1, p2);
+  if (area === 0) return null; // degenerate triangle, skip it
+
+  const w0 = edgeFunction(p1, p2, p) / area;
+  const w1 = edgeFunction(p2, p0, p) / area;
+  const w2 = edgeFunction(p0, p1, p) / area;
+
+  return { w0, w1, w2 };
+}
+function initGrid() {
+  for (let u = 0; u < cols; u++) {
+    for (let v = 0; v < rows; v++) {
+      pixelGrid[u][v] = null;
+    }
+  }
+}
+
+function projectToGrid(point) {
+  const camVert = {
+    x: point.x - camera.x,
+    y: point.y - camera.y,
+    z: point.z - camera.z
+  };
+  if (camVert.z <= NEAR) return null;
+  return {
+    u: (camVert.x / camVert.z) * GRID_F + cols / 2,
+    v: rows / 2 - (camVert.y / camVert.z) * GRID_F,
+    z: camVert.z 
+  };
+}
+
+
+function drawIncrementalLine(u1, v1, u2, v2, color) {
+  if (u1 > u2) {
+    [u1, u2] = [u2, u1];
+    [v1, v2] = [v2, v1];
+  }
+
+  const steep = Math.abs(v2 - v1) > Math.abs(u2 - u1);
+
+  if (steep) {
+    // step along v instead of u
+    if (v1 > v2) { [u1, u2] = [u2, u1]; [v1, v2] = [v2, v1]; }
+    const m = (u2 - u1) / (v2 - v1);
+    let u = u1;
+    for (let v = v1; v <= v2; v++) {
+      setPixelColor(Math.round(u), v, color);
+      u += m;
+    }
+  } else {
+    const m = (v2 - v1) / (u2 - u1);
+    let v = v1;
+    for (let u = u1; u <= u2; u++) {
+      setPixelColor(u, Math.round(v), color);
+      v += m;
+    }
+  }
+}
+
+function setPixelColor(u, v, color){
+  u = Math.round(u);
+  v = Math.round(v);
+  if (u < 0 || u >= cols || v < 0 || v >= rows) return;
+  pixelGrid[u][v] = color;
+}
+
+function drawPixelGrid() {
+  const offsetX = (canvas.width - cols * 5) / 2;
+  const offsetY = (canvas.height - rows * 5) / 2;
+
+  for (let v = 0; v < rows; v++) {
+    for (let u = 0; u < cols; u++) {
+      if (pixelGrid[u][v] !== null) {
+        ctx.fillStyle = pixelGrid[u][v];
+        ctx.fillRect(u * 5 + offsetX, v * 5 + offsetY, 5, 5);
+      }
+    }
+  }
+}
+
+function draw(){
+  const level = document.querySelector('input[name="gameOption"]:checked').value;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#050510";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+if (level === "2") {
+    drawLevel2();
+  } else if (level === "3") {
+    drawLevel3();
+  } else {
+    drawLevel1();
+  }
+}
+
+function drawLevel1() {
+  drawLandscape();
+
+  for (const inst of objects) {
+    if (inst.picked) continue;
+
+    let projectedVertices = [];
+    for (const v of inst.model.vertices) {
+      projectedVertices.push(project(toWorld(v, inst)));
+    }
+
+    if (inst.model.faces) {
+      for (const face of inst.model.faces) {
+        drawFace(face.vertices, projectedVertices, face.color);
+      }
+    }
+
+    for (let e = 0; e < inst.model.edges.length; e++) {
+      const e1 = inst.model.edges[e][0];
+      const e2 = inst.model.edges[e][1];
+      if (projectedVertices[e1] === null || projectedVertices[e2] === null) continue;
+
+      drawLine(
+        projectedVertices[e1].u, projectedVertices[e1].v,
+        projectedVertices[e2].u, projectedVertices[e2].v,
+        inst.color
+      );
+    }
+  }
+}
+
+function drawLevel2() {
+  initGrid();
+     //here we set up and clear the canvas, every draw frame
+    // ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // ctx.fillStyle = "#050510";
+    // ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // ctx.lineWidth = 1;
+    // ctx.strokeStyle = "#444444";
+
+
+    // for(v=0; v< 200; v++){
+    //   for(u=0; u<320; u++){
+    //     console.log(u);
+    //     console.log(v);
+    //     console.log(pixelGrid[u][v]);
+    //     console.log("----")
+
+    //     ctx.fillStyle = pixelGrid[u][v];
+    //     ctx.fillRect(u*5, v*5, 5, 5);
+
+    //     if( seePixelOutline ){
+    //       ctx.strokeRect(u*5, v*5, 5, 5);
+    //     }
+
+    //   }
+    // }
+  for (const inst of objects) {
+    if (inst.picked) continue;
+
+    let projectedVertices = [];
+    for (const v of inst.model.vertices) {
+      projectedVertices.push(projectToGrid(toWorld(v, inst)));
+    }
+
+    for (let e = 0; e < inst.model.edges.length; e++) {
+      const e1 = inst.model.edges[e][0];
+      const e2 = inst.model.edges[e][1];
+      if (projectedVertices[e1] === null || projectedVertices[e2] === null) continue;
+
+      drawIncrementalLine(
+        projectedVertices[e1].u, projectedVertices[e1].v,
+        projectedVertices[e2].u, projectedVertices[e2].v,
+        inst.color
+      );
+    }
+  }
+
+  drawPixelGrid();
+}
+
+function drawLevel3() {
+  initGrid();
+  initZBuffer();
+
+  for (const inst of objects) {
+    if (inst.picked) continue;
+
+    let projectedVertices = [];
+    for (const v of inst.model.vertices) {
+      projectedVertices.push(projectToGrid(toWorld(v, inst)));
+    }
+
+    for (const face of inst.model.faces) {
+      const [i0, i1, i2] = face.vertices; // now always exactly 3
+      const p0 = projectedVertices[i0];
+      const p1 = projectedVertices[i1];
+      const p2 = projectedVertices[i2];
+      if (!p0 || !p1 || !p2) continue;
+
+      fillTriangle(p0, p1, p2, face.color);
+    }
+  }
+
+  drawPixelGrid();
+}
+
+  function project(point) {
+    const camVert = {
+      x: point.x - camera.x,
+      y: point.y - camera.y,
+      z: point.z - camera.z
+    };
+
+    if (camVert.z <= NEAR) {
+      return null;
+    }
+    return {
+      u: (camVert.x / camVert.z) * canvas.width + canvas.width / 2,
+      v: canvas.height / 2 - (camVert.y / camVert.z) * canvas.height
+    };
+  }
+
+  function toWorld(v, inst) {
+  return {
+    x: v.x * inst.scale + inst.pos.x,
+    y: v.y * inst.scale + inst.pos.y,
+    z: v.z * inst.scale + inst.pos.z,
+  };
+}
+
+const REACH = 4; // how close the camera needs to be to grab a fruit
+
+function tryPickFruit() {
+  let closest = null;
+  let closestDist = Infinity;
+
+  for (const inst of objects) {
+    if (!inst.pickable || inst.picked) continue;
+
+    const dx = inst.pos.x - camera.x;
+    const dz = inst.pos.z - camera.z;
+
+    if (dz <= 0) continue; // it's behind the camera, ignore it
+
+    const dist = dx * dx + dz * dz;
+    if (dist <= REACH * REACH && dist < closestDist) {
+      closest = inst;
+      closestDist = dist;
+    }
+  }
+
+  if (closest) {
+    closest.picked = true;
+    points++;
+    document.getElementById("pointCount").textContent = points;
+  }
+}
+
+  function drawFace(faceVertices, projectedVertices, color){
+    ctx.fillStyle = color;
+    ctx.beginPath();
+
+    for (let i = 0; i < faceVertices.length; i++) {
+      const projected = projectedVertices[faceVertices[i]];
+      if(projected === null) {
+        return; // Skip drawing this face if any vertex is behind the camera
+      }
+      const x = projected.u;
+      const y = projected.v;
+
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+
+    ctx.closePath();
+    ctx.fill();
+  }
+
+
+  function drawLandscape(){
+    const horizonY = canvas.height / 2;
+
+    // Sky and ground
+    ctx.fillStyle = "#8ED4F5";
+    ctx.fillRect(0, 0, canvas.width, horizonY);
+
+    ctx.fillStyle = "#8AF28E";
+    ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, horizonY);
+    ctx.lineTo(canvas.width, horizonY);
+    ctx.stroke();
+  }
+
+
+  //This uses a built in 'drawLine' function, provided by the javascript canvas
+  function drawLine(x1, y1, x2, y2){
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "grey";
+
+    //this is how you draw a line on the canvas 
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+    document.addEventListener("keydown", (event) => {
+
+      event.preventDefault();
+       switch (event.key) {
+        case "ArrowUp":
+          tryMoveCamera(0, 1);
+          console.log("Up arrow pressed");
+          draw();
+          break;
+        case "ArrowDown":
+          tryMoveCamera(0, -1);
+          console.log("Down arrow pressed");
+          draw();
+          break;
+        case "ArrowLeft":
+          tryMoveCamera(-1, 0);
+          console.log("Left arrow pressed");
+          draw();
+          break;
+        case "ArrowRight":
+          tryMoveCamera(1, 0);
+          console.log("Right arrow pressed");
+          draw();
+          break;
+        case "r":
+        case "R":
+          camera = {x: 0, y: 0, z: -10};
+          points = 0;
+          document.getElementById("pointCount").textContent = points;
+          for (const inst of objects) {
+            if (inst.pickable) inst.picked = false;
+          }
+          console.log("Reset");
+          draw();
+          break;
+        case " ":
+        tryPickFruit();
+        draw();
+        break;
+        default:
+          return;      
+      }
+    });
+
+function makeFruitRow(count, startX, spacingX, z) {
+  const row = [];
+  for (let i = 0; i < count; i++) {
+    row.push({
+      model: fruit,
+      pos: { x: startX + i * spacingX, y: -1, z: z },
+      scale: 0.1,
+      color: "pink",
+      pickable: true,
+      picked: false,
+    });
+  }
+  return row;
+}
+
+function tryMoveCamera(dx, dz) {
+  const newX = camera.x + dx;
+  const newZ = camera.z + dz;
+
+  // 1. world bounds check
+  if (newX < WORLD_MIN_X || newX > WORLD_MAX_X) return;
+  if (newZ < WORLD_MIN_Z || newZ > WORLD_MAX_Z) return;
+
+  // 2. object collision check
+  for (const inst of objects) {
+    if (inst.model === fruit || inst.model === bush) continue; // fruit is small and pickable, not solid
+
+    const ddx = newX - inst.pos.x;
+    const ddz = newZ - inst.pos.z;
+    const distSq = ddx * ddx + ddz * ddz;
+
+    if (distSq < CAMERA_RADIUS * CAMERA_RADIUS) {
+      return; // too close to something solid, reject the move
+    }
+  }
+
+  // both checks passed, commit the move
+  camera.x = newX;
+  camera.z = newZ;
+}
+
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    draw();
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+</script>
+</body>
+</html>
