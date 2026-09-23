@@ -11,13 +11,13 @@
   <canvas id="canvas"></canvas>
   <div id="title" style="font-family: 'Brush Script MT', cursive;">MY FRUIT WORTH</div>
   <div id="info">
-    Use the arrow keys to move the camera around. <br>Press 'R' to start over.
+    Use the arrow keys to move the camera around. <br>Press 'R' to start over<br> Use space to pick your fruit.
   </div>
   <button id="dockInstructions" type="button">&lt</button>
   <div id="points">
     Fruits Collected: <span id="pointCount">0</span>
   </div>
-
+  <div id="levelOptions">
   <label class="circle-option">
     <input type="radio" name="gameOption" id="circleA" value="1" checked>
     Level 1
@@ -32,12 +32,18 @@
     <input type="radio" name="gameOption" id="circleC" value="3">
     Level 3
   </label>
+  </div>
 
   <div id = "name">Maya Tomarchio</div>
 
+  <section id="pickedOut">
+    <h1>PICKED OUT</h1>
+    <p>Great Job, come back next season</p>
+    <b>R to restart<b>
+  </section>
+
 <script>
 
-  //we add shapes (like lines) to this canvas
   document.getElementById("circleA").addEventListener("change", draw);
   document.getElementById("circleB").addEventListener("change", draw);
   document.getElementById("circleC").addEventListener("change", draw);
@@ -49,8 +55,10 @@
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
   const info = document.getElementById("info");
+  const pickedOut = document.getElementById("pickedOut");
   const dockInstructions = document.getElementById("dockInstructions");
-  let seePixelOutline = false; 
+  const totalFruit = 5;
+  let seePixelOutline = true; 
 
   const pixelGrid = Array.from(
     { length: cols },
@@ -74,8 +82,8 @@
       { x: -1,  y: 1,  z: -1},  // F, idx 5 back top left
       { x:  1,  y: -1, z:  -1}, // G, idx 6 back bottom right
       { x: -1,  y: -1, z: -1},  // H, idx 7 back bottom left
-      { x:  0,  y:  2, z:  1},   // front roof ridge, idx 8
-      { x:  0,  y:  2, z: -1}    // back roof ridge, idx 9
+      { x:  0,  y:  2, z:  1},  // 8 front roof ridge, idx 8
+      { x:  0,  y:  2, z: -1}   // 9 back roof ridge, idx 9
     ],
     edges: [
       [0, 1],
@@ -90,6 +98,11 @@
       [6, 7],
       [5, 7], 
       [3, 7], 
+      [0, 8],
+      [1, 8],
+      [4, 9],
+      [5, 9],
+      [8, 9]
     ],
     faces: [
     { vertices: [5, 6, 7], color: "#b5651d" }, // back wall
@@ -106,8 +119,12 @@
 
     { vertices: [1, 0, 8], color: "#8b2f2f" },    // front roof
     { vertices: [5, 4, 9], color: "#6f2525" },    // back roof
-    { vertices: [0, 4, 9, 8], color: "#9e3838" }, // right roof slope
-    { vertices: [1, 5, 9, 8], color: "#7d2929" }  // left roof slope
+
+    { vertices: [0, 9, 8], color: "#9e3838" }, // right roof slope
+    { vertices: [0, 4, 9], color: "#9e3838" }, // right roof slope
+
+    { vertices: [1, 9, 8], color: "#7d2929" },  // left roof slope
+    { vertices: [1, 5, 9], color: "#7d2929" }
   ]
   };
 
@@ -139,10 +156,10 @@
 
   const bush = {
     vertices: [
-      { x: 0, y: 0,  z: 0 },  //0 bottom left back
-      { x: 0, y: 0, z: 1 },   //1 bottom left front
-      { x: 4, y: 0,  z: 1 },  //2 bottom right front
-      { x: 4, y: 0, z: 0 },   //3 bottom right back
+      { x: 0, y: -1,  z: 0 },  //0 bottom left back
+      { x: 0, y: -1, z: 1 },   //1 bottom left front
+      { x: 4, y: -1,  z: 1 },  //2 bottom right front
+      { x: 4, y: -1, z: 0 },   //3 bottom right back
       { x: 1, y: 4,  z: 0 },  //4 top left back
       { x: 1, y: 4, z: 1 },   //5 top left front
       { x: 3, y: 4,  z: 1 },  //6 top right front
@@ -152,6 +169,7 @@
       [0,1],[2,3],[1,2],[0,3],   // connect bottom verticies
       [4,5],[6,7],[5,6],[4,7],   // connect tops
       [4,0],[1,5],[2,6],[3,7],   // connect top to bottom
+    
     ],
     faces: [
       { vertices: [0, 1, 2], color: "#2e7d32" }, // bottom
@@ -175,8 +193,7 @@
   };
 
   const objects = [
-  { model: house, pos: {x: 0, y: -2, z: 10}, scale: 3, color: "white" },
-  { model: fruit, pos: {x: 8, y: -1, z: 8},  scale: 0.1, color: "red", pickable: true, picked: false},
+  { model: house, pos: {x: 0, y: -2, z: 10}, scale: 3, color: "brown" },
   { model: bush, pos: {x: 6, y: -1, z: 8},  scale: 0.1, color: "green" },
   { model: bush, pos: {x: 6, y: -1, z: 4},  scale: 0.2, color: "green" },
   { model: bush, pos: {x: -6, y: -1, z: 8},  scale: 0.1, color: "green" },
@@ -185,17 +202,17 @@
   { model: bush, pos: {x: -2, y: -1, z: -3},  scale: 0.1, color: "green" },
   { model: bush, pos: {x: 2, y: -1, z: 8},  scale: 0.05, color: "green" },
   { model: bush, pos: {x: 6, y: -1, z: -5},  scale: 0.1, color: "green" },
-  ...makeFruitRow(10, 2, 1.5, 8),   // 5 fruit, starting at x=2, 1.5 apart, all at z=8
+  ...makeFruitRow(totalFruit),   // # fruit, starting at x=2, 1.5 apart, all at z=8
 ];
 
 
   let camera = {x: 0, y: 0, z: -10};
   let points = 0;
   const NEAR = 0.1; //do not draw anything closer than this to the camera
-  const WORLD_MIN_X = -12;
-  const WORLD_MAX_X = 12;
-  const WORLD_MIN_Z = -12;
-  const WORLD_MAX_Z = 14;
+  const WORLD_MIN_X = -15;
+  const WORLD_MAX_X = 15;
+  const WORLD_MIN_Z = -15;
+  const WORLD_MAX_Z = 15;
 
 function boundingBox(p0, p1, p2) {
   return {
@@ -371,31 +388,7 @@ function drawLevel1() {
 
 function drawLevel2() {
   initGrid();
-     //here we set up and clear the canvas, every draw frame
-    // ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // ctx.fillStyle = "#050510";
-    // ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // ctx.lineWidth = 1;
-    // ctx.strokeStyle = "#444444";
-
-
-    // for(v=0; v< 200; v++){
-    //   for(u=0; u<320; u++){
-    //     console.log(u);
-    //     console.log(v);
-    //     console.log(pixelGrid[u][v]);
-    //     console.log("----")
-
-    //     ctx.fillStyle = pixelGrid[u][v];
-    //     ctx.fillRect(u*5, v*5, 5, 5);
-
-    //     if( seePixelOutline ){
-    //       ctx.strokeRect(u*5, v*5, 5, 5);
-    //     }
-
-    //   }
-    // }
   for (const inst of objects) {
     if (inst.picked) continue;
 
@@ -470,7 +463,7 @@ function drawLevel3() {
   };
 }
 
-const REACH = 4; // how close the camera needs to be to grab a fruit
+const REACH = 3; // how close the camera needs to be to grab a fruit
 
 function tryPickFruit() {
   let closest = null;
@@ -494,6 +487,9 @@ function tryPickFruit() {
   if (closest) {
     closest.picked = true;
     points++;
+    if(points===totalFruit){
+    pickedOut.classList.add("Enable");
+    }
     document.getElementById("pointCount").textContent = points;
   }
 }
@@ -558,23 +554,19 @@ function tryPickFruit() {
       event.preventDefault();
        switch (event.key) {
         case "ArrowUp":
-          tryMoveCamera(0, 1);
-          console.log("Up arrow pressed");
+          MoveCamera(0, 1);
           draw();
           break;
         case "ArrowDown":
-          tryMoveCamera(0, -1);
-          console.log("Down arrow pressed");
+          MoveCamera(0, -1);
           draw();
           break;
         case "ArrowLeft":
-          tryMoveCamera(-1, 0);
-          console.log("Left arrow pressed");
+          MoveCamera(-1, 0);
           draw();
           break;
         case "ArrowRight":
-          tryMoveCamera(1, 0);
-          console.log("Right arrow pressed");
+          MoveCamera(1, 0);
           draw();
           break;
         case "r":
@@ -585,6 +577,7 @@ function tryPickFruit() {
           for (const inst of objects) {
             if (inst.pickable) inst.picked = false;
           }
+          pickedOut.classList.remove("Enable");
           console.log("Reset");
           draw();
           break;
@@ -597,32 +590,38 @@ function tryPickFruit() {
       }
     });
 
-function makeFruitRow(count, startX, spacingX, z) {
+function makeFruitRow(count) {
   const row = [];
+  let z = Math.random() * (15 - -15) + -15;
+  let x = Math.random() * (15 - -15) + -15;
+
   for (let i = 0; i < count; i++) {
+
     row.push({
       model: fruit,
-      pos: { x: startX + i * spacingX, y: -1, z: z },
+      pos: { x: x, y: -1, z: z },
       scale: 0.1,
       color: "pink",
       pickable: true,
       picked: false,
-    });
+      });
+      z = Math.random() * (15 - -15) + -15;
+      x = Math.random() * (15 - -15) + -15;
   }
   return row;
 }
 
-function tryMoveCamera(dx, dz) {
+function MoveCamera(dx, dz) {
   const newX = camera.x + dx;
   const newZ = camera.z + dz;
 
-  // 1. world bounds check
+  // world bounds check
   if (newX < WORLD_MIN_X || newX > WORLD_MAX_X) return;
   if (newZ < WORLD_MIN_Z || newZ > WORLD_MAX_Z) return;
 
-  // 2. object collision check
+  // object collision check
   for (const inst of objects) {
-    if (inst.model === fruit || inst.model === bush) continue; // fruit is small and pickable, not solid
+    if (inst.model === fruit || inst.model === bush) continue;
 
     const ddx = newX - inst.pos.x;
     const ddz = newZ - inst.pos.z;
