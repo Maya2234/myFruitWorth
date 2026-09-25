@@ -1,33 +1,57 @@
-#My Fruit Worth
-Objective: pick all the fruits growing in your garden
+# My Fruit Worth
 
-Users can move forward, backward in the direction they are facing. Users can rotate with left and right keys
-Users can restart the game with the R key. 
+**Objective:** Pick all the fruits growing in your garden.
 
-3 different graphic styles can be toggled via radio buttons.
+## Controls & Gameplay
 
-When a user is close enough to a fruit object, they may pick it up by pressing the spacebar. The fruit will then be placed in their "basket". 
-Once all the fruits have been collected by the player, a winning screen appears. 
-The user may play again by pressing R.
+* **Movement:** Move forward or backward in the direction you are facing. Rotate using the **Left** and **Right** arrow keys.
+* **Interaction:** When close enough to a fruit object, press **Spacebar** to pick it up and place it in your basket.
+* **Restart:** Press **R** to restart the game at any time.
+* **Graphics:** Toggle between 3 different visual styles via radio buttons.
+* **Winning Condition:** A victory screen appears once all fruits have been collected. You can press **R** to play again.
 
-Each object type used in the game (house, bush, fruit) are defined as a set of verticies, and edges, and faces made up of the original verticies. Instances of the objects are then created with details including position and scaling factor. Then objects are projected using the pinhole camera method: diving x and y by z to show depth.
+## Technical Overview
 
-##Level 1
-First, I loop through each object skipping any picked fruit, and for each model apply the positioning and scaling and then projecting of all veritices. I sort for depth here make sure the smallest z in front of the camera gets drawn first by sorting depths from largest to smallest and starting with faces that are further away from the camera. To draw the faces, I used beginpath(), and then loop through all the verticies of each face with moveTo() before using closePath() and fill()
+Each object type used in the game (`house`, `bush`, `fruit`) is defined as a set of vertices, edges, and faces constructed from the original vertices. 
 
-##Level 2
-In level 2, first I initalize a grid of 320x200
-Then, I loop through all the object instances to be drawn, skipping any picked fruit
-For each object, I loop through all verticies, apply scaling and positing to the general model, and the project to the grid, and push to an array, skipping any behind camera. Next, I loop through the array of projected verticies and draw each edge, starting at (u1,v1), incrementing pixel by pixel on the x axis and adding the slope every incrementation to color in the pixels along the line.
+Object instances are created with specific position and scaling parameters, then projected using the **pinhole camera method** (dividing $x$ and $y$ by $z$ to project depth).
 
-##Level 3
-In level 3, grid is again initialized and picked fruit are skipped. I apply positioning and scaling to each object instance and push the vertiices to an array. Then, for each object I loop through the object faces skipping any behind the camera. To fill in each triangle I take the bounding box of the 3 verticies and loop through every pixel, tessting with barycentric coordinates to only fill in pixels inside the verticie triangle.
+---
 
-Fixes and failures:
-Unfortunately at the due date, my object collision method is not working ideally. It prevents users from crossing the "house" faces head on but at an angle (once camera position is rotated) it is not preventing the camera from moving through exisiting faces as it should. 
+## Graphics Pipeline Levels
 
-Future adjustments: 
-Sun that sets (essentially game timer) and allow sky to darken as sun goes down
-Weather + clouds
-Basket visual -> can show filling up
-Daily leaderboard 
+### Level 1
+
+1. Loop through each object instance (skipping any collected fruit).
+2. Apply positioning, scaling, and vertex projection for each model.
+3. **Depth Sorting:** Sort depths from largest to smallest $z$-value so that geometry furthest from the camera is drawn first (ensuring the smallest $z$ in front of the camera draws last/on top).
+4. **Rendering:** Draw faces using HTML5 Canvas methods: `beginPath()`, step through face vertices with `moveTo()`, then finish with `closePath()` and `fill()`.
+
+### Level 2
+
+1. Initialize a grid of $320 \times 200$.
+2. Loop through all object instances (skipping collected fruit).
+3. Apply scaling, positioning, and projection to the grid for all vertices, pushing valid points to an array (skipping geometry behind the camera).
+4. Loop through projected vertices and draw each edge starting at $(u_1, v_1)$, stepping pixel-by-pixel along the X-axis and adding the slope on each increment to color the line.
+
+### Level 3
+
+1. Initialize the grid and skip collected fruit.
+2. Apply positioning and scaling to object instances and store projected vertices.
+3. For each object, loop through visible faces (clipping geometry behind the camera).
+4. **Triangle Rasterization:** Calculate the bounding box for the 3 vertices of each face, then evaluate every pixel using **barycentric coordinates** to fill only pixels contained inside the triangle.
+
+---
+
+## Known Issues & Failures
+
+* **Collision Detection:** Object collisions are not fully functional. While collision prevention works when approaching house faces head-on, approaching at an angle (after rotating the camera) allows the player to pass through solid faces.
+
+---
+
+## Future Improvements
+
+* **Dynamic Day/Night Cycle:** Add a setting sun that acts as a game timer, causing the sky to gradually darken.
+* **Weather System:** Introduce dynamic weather and clouds.
+* **Basket UI:** Add a visual basket HUD element that fills up as fruits are collected.
+* **Social Features:** Implement a daily leaderboard.
