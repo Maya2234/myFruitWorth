@@ -2,68 +2,81 @@
 <html lang="en">
 <head>
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='80'%3E%F0%9F%8D%87%3C/text%3E%3C/svg%3E">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Fruit Worth</title>
-  
 </head>
 <body>
   <canvas id="canvas"></canvas>
   <div id="title" style="font-family: 'Brush Script MT', cursive;">MY FRUIT WORTH</div>
   <div id="info">
-    Use the arrow keys to move the camera around. <br>Press 'R' to start over<br> Use space to pick your fruit.
+    Use the arrow keys to move the camera around <br>Press 'R' to start over<br> Use space to pick your fruit
   </div>
   <button id="dockInstructions" type="button">&lt</button>
   <div id="points">
-    Fruits Collected: <span id="pointCount">0</span>
+    Fruits Collected: <span id="pointCount">0</span>/<span id="totalFruit">X</span>
   </div>
   <div id="levelOptions">
+    <label class="circle-option">&emsp;&emsp;Adjust Graphics:</label>
   <label class="circle-option">
     <input type="radio" name="gameOption" id="circleA" value="1" checked>
-    Level 1
+    1) faces
   </label>
 
   <label class="circle-option">
     <input type="radio" name="gameOption" id="circleB" value="2">
-    Level 2
+    2) wireframe
   </label>
 
   <label class="circle-option">
     <input type="radio" name="gameOption" id="circleC" value="3">
-    Level 3
+    3) wireframe + filed faces
   </label>
   </div>
 
-  <div id = "name">Maya Tomarchio</div>
+  <button id="dockLevels" type="button">&lt</button>
+
+  <div id="name">by Maya Tomarchio</div>
 
   <section id="pickedOut">
     <h1>PICKED OUT</h1>
     <p>Great Job, come back next season</p>
-    <b>R to restart<b>
+    <b>R to restart</b>
+  </section>
+
+  <section id="start">
+    <h1 id="title-font" style="font-size: 4rem">MY FRUIT WORTH</h1>
+    <p style="font-size: 1rem">Hurry! You need to collect all of the fruit from your garden before the farmers market tomorrow. Finish picking before the sun goes down!</p>
+    <br>
+    <b style="font-size: 2rem">Tap the spacebar to begin</b>
   </section>
 
 <script>
 
-  document.getElementById("circleA").addEventListener("change", draw);
-  document.getElementById("circleB").addEventListener("change", draw);
-  document.getElementById("circleC").addEventListener("change", draw);
-
   const CAMERA_RADIUS = .5; // how close the camera can get to a solid object
-  const GRID_F = 120; // tune this until the scene looks reasonably sized
+  const GRID_F = 120;
   const rows = 200;
   const cols = 320; //grid width 
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
   const info = document.getElementById("info");
+  const levelOptions = document.getElementById("levelOptions");
   const pickedOut = document.getElementById("pickedOut");
+  const start = document.getElementById("start");
   const dockInstructions = document.getElementById("dockInstructions");
+  const dockLevels = document.getElementById("dockLevels");
   const totalFruit = 5;
-  let seePixelOutline = true; 
-
   const pixelGrid = Array.from(
     { length: cols },
     () => Array(rows).fill(null)
   );
+
+  document.getElementById("circleA").addEventListener("change", draw);
+  document.getElementById("circleB").addEventListener("change", draw);
+  document.getElementById("circleC").addEventListener("change", draw);
+
+  document.getElementById("totalFruit").textContent = totalFruit;
 
   dockInstructions.addEventListener("click", () => {
     info.classList.toggle("docked");
@@ -72,18 +85,25 @@
       : "<";
   });
 
+  dockLevels.addEventListener("click", () => {
+  levelOptions.classList.toggle("docked");
+  dockInstructions.textContent = info.classList.contains("docked")
+    ? ">"
+    : "<";
+});
+
   const house = {
     vertices: [
-      { x:  1,  y: 1,  z: 1},   // A, idx 0 front top right
-      { x: -1,  y: 1,  z: 1},   // B, idx 1 front top left
-      { x:  1,  y: -1, z: 1},   // C, idx 2 front bottom right
-      { x: -1,  y: -1, z:  1},  // D, idx 3 front bottom left
-      { x:  1,  y: 1,  z: -1},  // E, idx 4 back top right
-      { x: -1,  y: 1,  z: -1},  // F, idx 5 back top left
-      { x:  1,  y: -1, z:  -1}, // G, idx 6 back bottom right
-      { x: -1,  y: -1, z: -1},  // H, idx 7 back bottom left
-      { x:  0,  y:  2, z:  1},  // 8 front roof ridge, idx 8
-      { x:  0,  y:  2, z: -1}   // 9 back roof ridge, idx 9
+      { x:  1,  y: 2,  z: 1},   // A, idx 0 front top right
+      { x: -1,  y: 2,  z: 1},   // B, idx 1 front top left
+      { x:  1,  y: 0, z: 1},   // C, idx 2 front bottom right
+      { x: -1,  y: 0, z:  1},  // D, idx 3 front bottom left
+      { x:  1,  y: 2,  z: -1},  // E, idx 4 back top right
+      { x: -1,  y: 2,  z: -1},  // F, idx 5 back top left
+      { x:  1,  y: 0, z: -1},  // G, idx 6 back bottom right
+      { x: -1,  y: 0, z: -1},  // H, idx 7 back bottom left
+      { x:  0,  y: 3,  z: 1},   // 8 front roof ridge, idx 8
+      { x:  0,  y: 3,  z: -1}   // 9 back roof ridge, idx 9
     ],
     edges: [
       [0, 1],
@@ -130,12 +150,12 @@
 
   const fruit = {
   vertices: [
-    { x: 0, y: 1,  z: 0 },   // 0 top
-    { x: 0, y: -1, z: 0 },   // 1 bottom
-    { x: 1, y: 0,  z: 0 },   // 2 right
-    { x: -1, y: 0, z: 0 },   // 3 left
-    { x: 0, y: 0,  z: 1 },   // 4 front
-    { x: 0, y: 0,  z: -1 },  // 5 back
+    { x: 0, y: 2,  z: 0 },   // 0 top
+    { x: 0, y: 0, z: 0 },   // 1 bottom
+    { x: 1, y: 1,  z: 0 },   // 2 right
+    { x: -1, y: 1, z: 0 },   // 3 left
+    { x: 0, y: 1,  z: 1 },   // 4 front
+    { x: 0, y: 1,  z: -1 },  // 5 back
   ],
   edges: [
     [0,2],[0,3],[0,4],[0,5],   // top to the middle ring
@@ -143,33 +163,32 @@
     [2,4],[4,3],[3,5],[5,2],   // the ring itself
   ],
   faces: [
-    { vertices: [0, 2, 4], color: "red" },
-    { vertices: [0, 4, 3], color: "red" },
-    { vertices: [0, 3, 5], color: "red" },
-    { vertices: [0, 5, 2], color: "red" },
-    { vertices: [1, 2, 4], color: "red" },
-    { vertices: [1, 4, 3], color: "red" },
-    { vertices: [1, 3, 5], color: "red" },
-    { vertices: [1, 5, 2], color: "red" }
+    { vertices: [0, 2, 4]},
+    { vertices: [0, 4, 3]},
+    { vertices: [0, 3, 5]},
+    { vertices: [0, 5, 2]},
+    { vertices: [1, 2, 4]},
+    { vertices: [1, 4, 3]},
+    { vertices: [1, 3, 5]},
+    { vertices: [1, 5, 2]}
   ]
   };
 
   const bush = {
     vertices: [
-      { x: 0, y: -1,  z: 0 },  //0 bottom left back
-      { x: 0, y: -1, z: 1 },   //1 bottom left front
-      { x: 4, y: -1,  z: 1 },  //2 bottom right front
-      { x: 4, y: -1, z: 0 },   //3 bottom right back
-      { x: 1, y: 4,  z: 0 },  //4 top left back
-      { x: 1, y: 4, z: 1 },   //5 top left front
-      { x: 3, y: 4,  z: 1 },  //6 top right front
-      { x: 3, y: 4, z: 0 },   //7 top right back
+      { x: 0, y: 0,  z: 0 },  //0 bottom left back
+      { x: 0, y: 0, z: 1 },   //1 bottom left front
+      { x: 4, y: 0,  z: 1 },   //2 bottom right front
+      { x: 4, y: 0, z: 0 },    //3 bottom right back
+      { x: 1, y: 5,  z: 0 },    //4 top left back
+      { x: 1, y: 5, z: 1 },     //5 top left front
+      { x: 3, y: 5, z: 1 },     //6 top right front
+      { x: 3, y: 5, z: 0 },     //7 top right back
     ],
     edges: [
       [0,1],[2,3],[1,2],[0,3],   // connect bottom verticies
       [4,5],[6,7],[5,6],[4,7],   // connect tops
-      [4,0],[1,5],[2,6],[3,7],   // connect top to bottom
-    
+      [4,0],[1,5],[2,6],[3,7],   // connect top to bottom  
     ],
     faces: [
       { vertices: [0, 1, 2], color: "#2e7d32" }, // bottom
@@ -200,13 +219,14 @@
   { model: bush, pos: {x: 6, y: -1, z: 8},  scale: 0.1, color: "green" },
   { model: bush, pos: {x: 10, y: -1, z: 4},  scale: 0.2, color: "green" },
   { model: bush, pos: {x: -2, y: -1, z: -3},  scale: 0.1, color: "green" },
-  { model: bush, pos: {x: 2, y: -1, z: 8},  scale: 0.05, color: "green" },
+  { model: bush, pos: {x: 2, y: -1, z: 8},  scale: .1, color: "green" },
   { model: bush, pos: {x: 6, y: -1, z: -5},  scale: 0.1, color: "green" },
-  ...makeFruitRow(totalFruit),   // # fruit, starting at x=2, 1.5 apart, all at z=8
+  ...drawFruit(totalFruit),
+  ...drawBush(7)
 ];
 
 
-  let camera = {x: 0, y: 0, z: -10};
+  let camera = {x: 0, y: 0, z: -10, rotation: 0};
   let points = 0;
   const NEAR = 0.1; //do not draw anything closer than this to the camera
   const WORLD_MIN_X = -15;
@@ -245,7 +265,7 @@ function fillTriangle(p0, p1, p2, color) {
 
       const z = w0 * p0.z + w1 * p1.z + w2 * p2.z;
 
-      if (z < zBuffer[u][v]) {          // is this triangle closer than what's there?
+      if (z < zBuffer[u][v]) {          // is this triangle closer than what's there
         zBuffer[u][v] = z;
         pixelGrid[u][v] = color;
       }
@@ -277,10 +297,14 @@ function initGrid() {
 }
 
 function projectToGrid(point) {
+  const relativeX = point.x - camera.x;
+  const relativeZ = point.z - camera.z;
+  const cosRotation = Math.cos(camera.rotation);
+  const sinRotation = Math.sin(camera.rotation);
   const camVert = {
-    x: point.x - camera.x,
+    x: relativeX * cosRotation - relativeZ * sinRotation,
     y: point.y - camera.y,
-    z: point.z - camera.z
+    z: relativeX * sinRotation + relativeZ * cosRotation
   };
   if (camVert.z <= NEAR) return null;
   return {
@@ -355,40 +379,37 @@ if (level === "2") {
   }
 }
 
+function cameraSpaceZ(point) {
+  const relativeX = point.x - camera.x;
+  const relativeZ = point.z - camera.z;
+  const sinRotation = Math.sin(camera.rotation);
+  const cosRotation = Math.cos(camera.rotation);
+  return relativeX * sinRotation + relativeZ * cosRotation;  // same z formula as project()
+}
+
 function drawLevel1() {
   drawLandscape();
 
+  const drawList = [];
   for (const inst of objects) {
     if (inst.picked) continue;
 
-    let projectedVertices = [];
-    for (const v of inst.model.vertices) {
-      projectedVertices.push(project(toWorld(v, inst)));
-    }
+    const worldVerts = inst.model.vertices.map(v => toWorld(v, inst));
+    const projected  = worldVerts.map(p => project(p));
 
-    if (inst.model.faces) {
-      for (const face of inst.model.faces) {
-        drawFace(face.vertices, projectedVertices, face.color);
-      }
-    }
-
-    for (let e = 0; e < inst.model.edges.length; e++) {
-      const e1 = inst.model.edges[e][0];
-      const e2 = inst.model.edges[e][1];
-      if (projectedVertices[e1] === null || projectedVertices[e2] === null) continue;
-
-      drawLine(
-        projectedVertices[e1].u, projectedVertices[e1].v,
-        projectedVertices[e2].u, projectedVertices[e2].v,
-        inst.color
-      );
+    for (const face of inst.model.faces) {
+      const depth = face.vertices.reduce((sum, i) => sum + cameraSpaceZ(worldVerts[i]), 0) / face.vertices.length;
+      drawList.push({ face, projected, depth, color: face.color || inst.color });
     }
   }
+
+  drawList.sort((a, b) => b.depth - a.depth);
+  for (const d of drawList) drawFace(d.face.vertices, d.projected, d.color);
 }
 
 function drawLevel2() {
   initGrid();
-
+  drawLandscape();
   for (const inst of objects) {
     if (inst.picked) continue;
 
@@ -416,6 +437,7 @@ function drawLevel2() {
 function drawLevel3() {
   initGrid();
   initZBuffer();
+  drawLandscape();
 
   for (const inst of objects) {
     if (inst.picked) continue;
@@ -426,13 +448,13 @@ function drawLevel3() {
     }
 
     for (const face of inst.model.faces) {
-      const [i0, i1, i2] = face.vertices; // now always exactly 3
+      const [i0, i1, i2] = face.vertices;
       const p0 = projectedVertices[i0];
       const p1 = projectedVertices[i1];
       const p2 = projectedVertices[i2];
       if (!p0 || !p1 || !p2) continue;
 
-      fillTriangle(p0, p1, p2, face.color);
+      fillTriangle(p0, p1, p2, face.color || inst.color);
     }
   }
 
@@ -440,10 +462,14 @@ function drawLevel3() {
 }
 
   function project(point) {
+    const relativeX = point.x - camera.x;
+    const relativeZ = point.z - camera.z;
+    const cosRotation = Math.cos(camera.rotation);
+    const sinRotation = Math.sin(camera.rotation);
     const camVert = {
-      x: point.x - camera.x,
+      x: relativeX * cosRotation - relativeZ * sinRotation,
       y: point.y - camera.y,
-      z: point.z - camera.z
+      z: relativeX * sinRotation + relativeZ * cosRotation
     };
 
     if (camVert.z <= NEAR) {
@@ -463,8 +489,7 @@ function drawLevel3() {
   };
 }
 
-const REACH = 3; // how close the camera needs to be to grab a fruit
-
+const REACH = 4; // how close the camera needs to be to grab a fruit
 function tryPickFruit() {
   let closest = null;
   let closestDist = Infinity;
@@ -474,8 +499,11 @@ function tryPickFruit() {
 
     const dx = inst.pos.x - camera.x;
     const dz = inst.pos.z - camera.z;
+    const forwardX = Math.sin(camera.rotation);
+    const forwardZ = Math.cos(camera.rotation);
+    const depth = dx * forwardX + dz * forwardZ;
 
-    if (dz <= 0) continue; // it's behind the camera, ignore it
+    if (depth <= 0) continue; // behind the camera's current direction
 
     const dist = dx * dx + dz * dz;
     if (dist <= REACH * REACH && dist < closestDist) {
@@ -494,32 +522,29 @@ function tryPickFruit() {
   }
 }
 
-  function drawFace(faceVertices, projectedVertices, color){
-    ctx.fillStyle = color;
-    ctx.beginPath();
+function drawFace(faceVertices, projectedVertices, color){
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
 
-    for (let i = 0; i < faceVertices.length; i++) {
-      const projected = projectedVertices[faceVertices[i]];
-      if(projected === null) {
-        return; // Skip drawing this face if any vertex is behind the camera
-      }
-      const x = projected.u;
-      const y = projected.v;
-
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    }
-
-    ctx.closePath();
-    ctx.fill();
+  for (let i = 0; i < faceVertices.length; i++) {
+    const projected = projectedVertices[faceVertices[i]];
+    if (projected === null) return;
+    const x = projected.u;
+    const y = projected.v;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   }
 
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
 
   function drawLandscape(){
     const horizonY = canvas.height / 2;
+    
 
     // Sky and ground
     ctx.fillStyle = "#8ED4F5";
@@ -527,51 +552,38 @@ function tryPickFruit() {
 
     ctx.fillStyle = "#8AF28E";
     ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
-
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, horizonY);
-    ctx.lineTo(canvas.width, horizonY);
-    ctx.stroke();
   }
 
 
-  //This uses a built in 'drawLine' function, provided by the javascript canvas
-  function drawLine(x1, y1, x2, y2){
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "grey";
+  document.addEventListener("keydown", (event) => {
+    if (!start.classList.contains("hide")) {
+      if (event.key === " ") {
+        start.classList.add("hide");
+      }
+      return;
+    }
 
-    //this is how you draw a line on the canvas 
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-  }
-
-    document.addEventListener("keydown", (event) => {
-
-      event.preventDefault();
-       switch (event.key) {
+    event.preventDefault();
+    switch (event.key) {
         case "ArrowUp":
-          MoveCamera(0, 1);
+          MoveCamera(1);
           draw();
           break;
         case "ArrowDown":
-          MoveCamera(0, -1);
+          MoveCamera(-1);
           draw();
           break;
         case "ArrowLeft":
-          MoveCamera(-1, 0);
+          camera.rotation -= Math.PI / 30;
           draw();
           break;
         case "ArrowRight":
-          MoveCamera(1, 0);
+          camera.rotation += Math.PI / 30;
           draw();
           break;
         case "r":
         case "R":
-          camera = {x: 0, y: 0, z: -10};
+          camera = {x: 0, y: 0, z: -10, rotation: 0};
           points = 0;
           document.getElementById("pointCount").textContent = points;
           for (const inst of objects) {
@@ -582,38 +594,55 @@ function tryPickFruit() {
           draw();
           break;
         case " ":
-        tryPickFruit();
-        draw();
-        break;
+          tryPickFruit();
+          draw();
+          break;
         default:
-          return;      
-      }
-    });
+          return;
+    }
+  });
 
-function makeFruitRow(count) {
+function drawFruit(count) {
   const row = [];
-  let z = Math.random() * (15 - -15) + -15;
-  let x = Math.random() * (15 - -15) + -15;
 
   for (let i = 0; i < count; i++) {
-
+  const z = Math.random() * (15 - -15) + -15;
+  const x = Math.random() * (15 - -15) + -15;
+  const colors = ["pink", " rgba(247, 73, 102)", "rgba(224, 207, 57)"];
     row.push({
       model: fruit,
       pos: { x: x, y: -1, z: z },
       scale: 0.1,
-      color: "pink",
+      color: colors[Math.floor(Math.random() * colors.length)],
       pickable: true,
       picked: false,
       });
-      z = Math.random() * (15 - -15) + -15;
-      x = Math.random() * (15 - -15) + -15;
   }
   return row;
 }
 
-function MoveCamera(dx, dz) {
-  const newX = camera.x + dx;
-  const newZ = camera.z + dz;
+function drawBush(count) {
+  const row = [];
+
+  for (let i = 0; i < count; i++) {
+  const z = Math.random() * (15 - -15) + -15;
+  const x = Math.random() * (15 - -15) + -15;
+  const scale = Math.random() * (.5 - .01) + .005;
+    row.push({
+      model: bush,
+      pos: { x: x, y: -1, z: z },
+      scale: scale,
+      color: "green",
+      });
+  }
+  return row;
+}
+
+function MoveCamera(direction) {
+  const forwardX = Math.sin(camera.rotation);
+  const forwardZ = Math.cos(camera.rotation);
+  const newX = camera.x + forwardX * direction;
+  const newZ = camera.z + forwardZ * direction;
 
   // world bounds check
   if (newX < WORLD_MIN_X || newX > WORLD_MAX_X) return;
@@ -623,18 +652,35 @@ function MoveCamera(dx, dz) {
   for (const inst of objects) {
     if (inst.model === fruit || inst.model === bush) continue;
 
-    const ddx = newX - inst.pos.x;
-    const ddz = newZ - inst.pos.z;
-    const distSq = ddx * ddx + ddz * ddz;
+    const { minX, maxX, minZ, maxZ } = getFootprint(inst);
 
-    if (distSq < CAMERA_RADIUS * CAMERA_RADIUS) {
-      return; // too close to something solid, reject the move
+    // clamp the camera's target position onto the box, giving the closest point on it
+    const closestX = Math.max(minX, Math.min(newX, maxX));
+    const closestZ = Math.max(minZ, Math.min(newZ, maxZ));
+
+    const dx = newX - closestX;
+    const dz = newZ - closestZ;
+
+    if (dx * dx + dz * dz < CAMERA_RADIUS * CAMERA_RADIUS) {
+      return; // too close to this object's actual footprint, reject the move
     }
   }
 
-  // both checks passed, commit the move
   camera.x = newX;
   camera.z = newZ;
+}
+
+function getFootprint(inst) {
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const v of inst.model.vertices) {
+    const wx = v.x * inst.scale + inst.pos.x;
+    const wz = v.z * inst.scale + inst.pos.z;
+    minX = Math.min(minX, wx);
+    maxX = Math.max(maxX, wx);
+    minZ = Math.min(minZ, wz);
+    maxZ = Math.max(maxZ, wz);
+  }
+  return { minX, maxX, minZ, maxZ };
 }
 
 

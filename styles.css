@@ -7,13 +7,14 @@
     }
 
     #levelOptions{
-      z-index: 5;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+       align-items: flex-start;
+      gap: 5px;
       position: fixed;
-      bottom: 48px;
-      left: 0;
+      bottom: 0px;
+      left:12px;
+      bottom:4px;
     }
 
     .circle-option {
@@ -28,8 +29,6 @@
       border-radius: 6px;
     }
 
-
-    /* Custom circular radio button styling */
     .circle-option input[type="radio"] {
       appearance: none;
       width: 24px;
@@ -47,7 +46,7 @@
       box-shadow: inset 0 0 0 4px #fff;
     }
 
-    #pickedOut {
+    #start.hide {
       display: none;
     }
 
@@ -61,6 +60,20 @@
       right:50%;
       transform: translateX(50%);
       font-size: 3rem;
+      background-color: rgba(0, 0, 0, 0.6);;
+    }
+
+      #start {
+      display: inline-flex;
+      align-items: center;
+      flex-direction:column;
+      position:absolute;
+      z-index:5;
+      top:20%;
+      right:50%;
+      transform: translateX(50%);
+      font-size: 3rem;
+      padding:2rem;
       background-color: rgba(0, 0, 0, 0.6);;
     }
 
@@ -98,8 +111,23 @@
       border-radius: 4px;
       color: white;
       cursor: pointer;
-      z-index: 4;
-      
+      z-index: 4;    
+    }
+
+    #dockLevels {
+      position: fixed;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 5px 8px;
+      border: 1px solid white;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;   
+      bottom:154px;
+      left:4px;
+    }
+
+    #levelOptions.docked {
+      transform: translateX(calc(-100% - 28px));
     }
 
     #points {
@@ -120,14 +148,19 @@
       font-size: 50px;
       line-height: 1.4;
     }
+
+    #title-font{
+      font-family: 'Brush Script MT', cursive;
+    }
+
     #name{
       position: fixed;
-      bottom: 12px;
-      left: 12px;
-      background: rgba(0, 0, 0, 0.6);
+      right: 32%;
+      top: 60px;
       border-radius: 8px;
       padding: 5px 10px;
-      font-size: 10px;
+      font-size: 15px;
       line-height: 1.4;
       z-index: 3;
+      font-family: 'Brush Script MT', cursive;
     }
